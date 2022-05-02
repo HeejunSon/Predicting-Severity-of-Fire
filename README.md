@@ -9,4 +9,8 @@ It includes every code that has been done throughout the project!
 
 # Handle Missing Data Code
 
-It includes code and results that show why KNN is used for final Code
+It includes code and results that show why KNN is used for final Code.
+
+# Error Analysis Code
+
+It is written in R and shows which regions/states have the most number of large errors.
