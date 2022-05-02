@@ -1,0 +1,323 @@
+---
+title: "DS440"
+author: "HeejunSon"
+output: html_notebook
+---
+
+```{r}
+# Import library
+library(tidyverse)
+library(reshape2)
+library(mdsr)
+library(Lahman)
+library(nycflights13)
+library(mvtnorm)
+library(factoextra)
+library(cluster)
+library(babynames)
+library(dplyr)
+library(ggplot2)
+library(Hmisc)
+library(tidyr)
+library(purrr)
+library(mosaicData)
+library(Lahman)
+library(mosaic)
+```
+
+```{r}
+# Read CSV file
+library(readr)
+Drop_Result <- read_csv("Drop Result.csv")
+Freq_Result <- read_csv("Freq Result.csv")
+KNN_Result <- read_csv("KNN Result.csv")
+MICE_Result <- read_csv("MICE Result.csv")
+KNN_SMOTER_Result <- read_csv("KNN SMOTER Result.csv")
+```
+
+# To check data is correctly imported
+
+```{r}
+KNN_SMOTER_Result
+```
+
+# Classify errors into two classes (low vs. high)
+
+```{r}
+# Drop
+Drop_Error <-
+  Drop_Result %>%
+  pull(Error) %>%
+  cut(breaks=c(0,50,Inf),
+      labels=c('Low', 'High'))
+Drop_Error_Class <- 
+  Drop_Result %>%
+  mutate(Error_Class = Drop_Error) %>%
+  filter(LONGITUDE > -135)
+# Freq
+Freq_Error <-
+  Freq_Result %>%
+  pull(Error) %>%
+  cut(breaks=c(0,50,Inf),
+      labels=c('Low', 'High'))
+Freq_Error_Class <- 
+  Freq_Result %>%
+  mutate(Error_Class = Freq_Error) %>%
+  filter(LONGITUDE > -135)
+# KNN
+KNN_Error <-
+  KNN_Result %>%
+  pull(Error) %>%
+  cut(breaks=c(0,50,Inf),
+      labels=c('Low', 'High'))
+KNN_Error_Class <- 
+  KNN_Result %>%
+  mutate(Error_Class = KNN_Error) %>%
+  filter(LONGITUDE > -135)
+# MICE
+MICE_Error <-
+  MICE_Result %>%
+  pull(Error) %>%
+  cut(breaks=c(0,50,Inf),
+      labels=c('Low', 'High'))
+MICE_Error_Class <- 
+  MICE_Result %>%
+  mutate(Error_Class = MICE_Error) %>%
+  filter(LONGITUDE > -135)
+# KNN SMOTER
+KNN_SMOTER_Error <-
+  KNN_SMOTER_Result %>%
+  pull(Error) %>%
+  cut(breaks=c(0,50,Inf),
+      labels=c('Low', 'High'))
+KNN_SMOTER_Error_Class <- 
+  KNN_SMOTER_Result %>%
+  mutate(Error_Class = KNN_SMOTER_Error) %>%
+  filter(LONGITUDE > -135)
+```
+
+# To see which state has the most errors
+
+```{r}
+# Drop_Error
+Drop_Error_Class %>%
+  filter(Error_Class == 'High') %>%
+  group_by(STATE) %>%
+  summarise(Drop_Error_Num = n()) %>%
+  arrange(desc(Drop_Error_Num))
+# Freq_Error
+Freq_Error_Class %>%
+  filter(Error_Class == 'High') %>%
+  group_by(STATE) %>%
+  summarise(Freq_Error_Num = n()) %>%
+  arrange(desc(Freq_Error_Num))
+# KNN_Error
+KNN_Error_Class %>%
+  filter(Error_Class == 'High') %>%
+  group_by(STATE) %>%
+  summarise(KNN_Error_Num = n()) %>%
+  arrange(desc(KNN_Error_Num))
+# MICE_Error
+MICE_Error_Class %>%
+  filter(Error_Class == 'High') %>%
+  group_by(STATE) %>%
+  summarise(MICE_Error_Num = n()) %>%
+  arrange(desc(MICE_Error_Num))
+# KNN_SMOTER_ERROR
+KNN_SMOTER_Error_Class %>%
+  filter(Error_Class == 'High') %>%
+  group_by(STATE) %>%
+  summarise(KNN_SMOTER_Error_Num = n()) %>%
+  arrange(desc(KNN_SMOTER_Error_Num))
+```
+
+# To see the distribution of error_class
+
+```{r}
+# Drop_Error_Class
+Drop_Error_Class %>%
+  group_by(Error_Class) %>%
+  summarise(Drop_N=n())
+# Freq_Error_Class
+Freq_Error_Class %>%
+  group_by(Error_Class) %>%
+  summarise(Freq_N=n())
+# KNN_Error_Class
+KNN_Error_Class %>%
+  group_by(Error_Class) %>%
+  summarise(KNN_N=n())
+# MICE_Error_Class
+MICE_Error_Class %>%
+  group_by(Error_Class) %>%
+  summarise(MICE_N=n())
+# KNN_SMOTER_Error_Class
+KNN_SMOTER_Error_Class %>%
+  group_by(Error_Class) %>%
+  summarise(KNN_SMOTER_N=n())
+```
+
+# Plot (Visualization)
+
+```{r}
+# Drop_Error_Map
+Drop_Error_Class %>% 
+  ggplot(aes(x = LONGITUDE, y = LATITUDE)) +
+  geom_point(aes(color = Error_Class), alpha = 0.5)  + 
+  scale_color_brewer(palette = "Set2") +
+  ggtitle("Drop_Error_Map")
+# Freq_Error_Map
+Freq_Error_Class %>% 
+  ggplot(aes(x = LONGITUDE, y = LATITUDE)) +
+  geom_point(aes(color = Error_Class), alpha = 0.5)  + 
+  scale_color_brewer(palette = "Set2") +
+  ggtitle("Freq_Error_Map")
+# KNN_Error_Map
+KNN_Error_Class %>% 
+  ggplot(aes(x = LONGITUDE, y = LATITUDE)) +
+  geom_point(aes(color = Error_Class), alpha = 0.5)  + 
+  scale_color_brewer(palette = "Set2") +
+  ggtitle("KNN_Error_Map")
+# MICE_Error_Map
+MICE_Error_Class %>% 
+  ggplot(aes(x = LONGITUDE, y = LATITUDE)) +
+  geom_point(aes(color = Error_Class), alpha = 0.5)  + 
+  scale_color_brewer(palette = "Set2") +
+  ggtitle("MICE_Error_Map")
+# KNN_SMOTER_Error_Map
+KNN_SMOTER_Error_Class %>% 
+  ggplot(aes(x = LONGITUDE, y = LATITUDE)) +
+  geom_point(aes(color = Error_Class), alpha = 0.5)  + 
+  scale_color_brewer(palette = "Set2") +
+  ggtitle("KNN_SMOTER_Error_Map")
+```
+
+# Notice:
+
+Our model predicts the size of wildfires as always smaller than size 1 due to imbalanced data.
+
+This means that our model cannot accurately predict the large size of wildfires.
+
+We need to focus on handling the imbalanced data for accurate predictions.
+
+```{r}
+# Sort predicted value in descending order (KNN)
+KNN_Result %>%
+  arrange(desc(Pred))
+# Sort predicted value in descending order (KNN_SMOTER)
+KNN_SMOTER_Result %>%
+  arrange(desc(Pred))
+```
+```{r}
+# Sort True value in descending order (KNN)
+KNN_Result %>%
+  arrange(desc(True))
+# Sort True value in descending order (KNN_SMOTER)
+KNN_SMOTER_Result %>%
+  arrange(desc(True))
+```
+```{r}
+# Sort Error in descending order (KNN)
+KNN_Result %>%
+  arrange(desc(Error))
+# Sort Error in descending order (KNN_SMOTER)
+KNN_SMOTER_Result %>%
+  arrange(desc(Error))
+```
+
+# Notice:
+
+Sorting error in descending order and sorting true values in descending order are the same!
+
+This means that our model is not working properly!
+
+# To check whether data is balanced or imbalanced
+
+```{r}
+# KNN
+KNN_True <-
+  KNN_Result %>%
+  pull(True) %>%
+  cut(breaks=c(0,1,50,Inf),
+      labels=c('Small', 'Medium','Large'))
+KNN_True_Class <- 
+  KNN_Result %>%
+  mutate(Size_Class = KNN_True) %>%
+  filter(LONGITUDE > -135)
+# KNN_SMOTER
+KNN_SMOTER_True <-
+  KNN_SMOTER_Result %>%
+  pull(True) %>%
+  cut(breaks=c(0,1,50,Inf),
+      labels=c('Small', 'Medium','Large'))
+KNN_SMOTER_True_Class <- 
+  KNN_SMOTER_Result %>%
+  mutate(Size_Class = KNN_SMOTER_True) %>%
+  filter(LONGITUDE > -135)
+
+KNN_True_Class
+KNN_SMOTER_True_Class
+```
+```{r}
+# KNN
+KNN_True_Class %>%
+  group_by(Size_Class) %>%
+  summarise(Size_N=n())
+# KNN_SMOTER
+KNN_SMOTER_True_Class %>%
+  group_by(Size_Class) %>%
+  summarise(Size_N=n())
+```
+
+# Notice:
+
+This implies that 60% of fire size is less than size 1.
+
+This shows imbalance of data.
+
+# To see which state/area has the most large errors
+
+```{r}
+# KNN
+KNN_True_Class %>%
+  arrange(desc(Error)) %>%
+  head(1000) %>%
+  group_by(STATE) %>%
+  summarise(Num_Error = n()) %>%
+  arrange(desc(Num_Error))
+# KNN_SMOTER
+KNN_SMOTER_True_Class %>%
+  arrange(desc(Error)) %>%
+  head(1000) %>%
+  group_by(STATE) %>%
+  summarise(Num_Error = n()) %>%
+  arrange(desc(Num_Error))
+```
+```{r}
+# KNN
+KNN_True_Class %>%
+  filter(STATE == 'TX') %>%
+  filter(True > 4) %>%
+  arrange(desc(True))
+# KNN_SMOTER
+KNN_SMOTER_True_Class %>%
+  filter(STATE == 'TX') %>%
+  filter(True > 4) %>%
+  arrange(desc(True))
+```
+
+# Notice:
+
+Even after I applied SMOTER, our model predicts the size of wildfires as around 7.
+
+This means that our model still does not work properly and have highly imbalanced dataset.
+
+
+
+
+
+
+
+
+
+
+
